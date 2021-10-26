@@ -1,0 +1,333 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MovieApp</title>
+</head>
+<style>
+    #bckgrnd
+    {
+        background-color: rgb(17, 55, 59);
+        color: rgb(255, 255, 255);
+    }
+
+    #searchspace
+    {
+        width: 600px;
+        margin: auto;
+    }
+
+    #searchresults
+    {
+        padding-top: 30px;
+        display: flex;
+        flex-direction: row;
+    }
+
+    #searchresults > img
+    {
+        width: 250px;
+    }
+
+    #displaymovies
+    {
+        display: grid;
+        grid-template-columns: repeat(5,20%);
+        padding: 30px;
+        padding-left: 75px;
+    }
+
+    .movie-div
+    {
+        width: 85%;
+    }
+
+    .movie-img
+    {
+        width: 100%;
+        border-radius: 25px;
+    }
+
+    #searchbar
+    {
+        width: 400px;
+        margin: auto;
+    }
+
+    input
+    {
+        width: 350px;
+        height: 30px;
+    }
+
+    #movies 
+    {
+        height: 300px;
+        width: 365px;
+        overflow: scroll;
+        border-top: none;
+    }
+    
+    #movies::-webkit-scrollbar
+    {
+        display: none;
+    }
+    
+    .each-div
+    {
+        margin-top: 5px;
+        display: flex;
+        flex-direction: row;
+    }
+
+    .each-div > img
+    {
+        width: 30px;
+    }
+
+    .details-div
+    {
+        display: flex;
+        flex-direction: column;
+        font-size: 12px;
+        margin-left: 10px;
+    }
+</style>
+
+<body>
+
+    <div id="bckgrnd">
+        <div id="searchspace">
+            <h1 style="text-align: center;">Movie details</h1>
+            <div id="searchbar">
+                <input oninput="debounce(main, 1000)" type="text" id="movie" placeholder="Search for movie"/>
+                <div id="movies"></div>
+            </div>
+            <div id="searchresults"></div>
+        </div>
+        <div id="displaymovies"></div>
+    </div>
+
+</body>
+</html>
+
+<script>
+
+    var container = document.getElementById("displaymovies");
+
+    searchMovies()
+
+    async function searchMovies()
+    {
+        container.innerHTML = null;
+
+        let movie = document.getElementById("movie").value;
+
+        let res = await fetch("https://api.themoviedb.org/3/movie/popular?api_key=e68a35399789d0391ca6a9b728e262e6&language=en-US&page=1");
+
+        console.log('res:', res)
+
+        let data = await res.json();
+
+        console.log('data:', data)
+        console.log('datatype:', typeof(data))
+        console.log('movies list:', data.results)
+
+        movieResults(data.results)
+
+        function movieResults(movie_list)
+        {
+            movie_list.forEach(element => 
+            {
+                let div = document.createElement("div");
+                div.setAttribute("class", "movie-div")
+
+                let img = document.createElement("img");
+                // img.src = element.backdrop_path;
+                img.src = `https://image.tmdb.org/t/p/w500${element.poster_path}`;
+                img.setAttribute("class", "movie-img")
+                // console.log(img)
+
+                let name = document.createElement("p");
+                name.innerHTML = "Name : " +  element.title;
+                // console.log('name:', name)
+
+                let year = document.createElement("p");
+                year.innerHTML = "Year : " +  element.release_date;
+        
+                div.append(img, name, year);
+
+                container.append(div);
+
+            });
+        }
+    }
+
+    //onclick function call
+
+    var search_container = document.getElementById("searchresults");
+
+    //**********Debouncing***************
+
+    async function moviesSearch(moviename)
+    {
+        try
+        {
+            let res = await fetch(`http://www.omdbapi.com/?apikey=638a97f4&s=${moviename}`);
+
+            let data = await res.json();
+            console.log('data:', data)
+            return data;
+        }
+        catch(e)
+        {
+            console.log("error",e)
+        }
+    }
+
+    function appendMovies(movies)
+    {
+        if(movies === undefined)
+        {
+            return false;
+        }
+
+        let movie_div = document.getElementById("movies");
+        movie_div.innerText = null;
+
+        movies.forEach(function(movie) 
+        {
+
+            let each_div = document.createElement("div");
+            each_div.setAttribute("class", "each-div");
+
+            let img = document.createElement("img");
+            img.src = movie.Poster;
+
+            let details_div = document.createElement("div");
+            details_div.setAttribute("class", "details-div")
+            
+            let name=document.createElement("name")
+            name.innerText = movie.Title;
+
+            let year=document.createElement("year")
+            year.innerText = movie.Year;
+
+            details_div.append(name, year)
+
+            each_div.append(img, details_div);
+
+            movie_div.append(each_div);
+
+            each_div.onclick = function() 
+            {
+                console.log("movie",movie);
+                movie_div.style.display = "none";
+
+                let goto_div = document.getElementById("searchresults");
+
+                let img = document.createElement("img");
+                img.src = movie.Poster;
+                img.style.width = "100px";
+                
+                goto_div.append(img, details_div)
+
+            }
+        });
+    }
+
+    function Goto_movie(data)
+    {
+        console.log('movie:', data)
+    }
+
+    var timerId;
+    
+    async function main()
+    {
+        let movie_name = document.getElementById("movie").value;
+        console.log('movie_name:', movie_name)
+        
+        if(movie_name.length < 3)
+        {
+            return false;
+        }
+
+        let res = await moviesSearch(movie_name);  
+
+        let movies_data = res.Search;
+        console.log('movies_data:', movies_data);
+
+        appendMovies(movies_data);
+    }
+
+    function debounce(func, delay)
+    {
+        if(timerId)
+        {
+            clearTimeout(timerId);
+        }
+
+        timerId = setTimeout(()=>
+        {
+            func();
+        }, delay);
+    }
+
+    async function Get_movie()
+    {
+        search_container.innerHTML = null;
+
+        let movie = document.getElementById("movie").value;
+        
+        let res = await fetch(`https://www.omdbapi.com/?s=${movie}&apikey=6ea40c94`);
+        console.log('res:', res)
+
+        let data = await res.json();
+        console.log('data:', data)
+
+        console.log('datatype:', typeof(data))
+        console.log('movies list:', data.Search)
+
+        function Show_products(prod)
+        {        
+            let div = document.createElement("div");
+
+            let img = document.createElement("img");
+            // console.log('prod.Poster:', prod.Poster);
+            
+                if(prod.Poster == undefined)
+                {
+                    img.src = "https://c.tenor.com/az538zZ1pS0AAAAM/sorry-my-fault.gif";
+
+                    let err_msg = document.createElement("h4");
+                    err_msg.innerText = "Oops!! Sorry, movie not found"
+
+                    div.append(img, err_msg);
+
+                    search_container.append(div);
+                    return
+                }
+
+            img.src = prod.Poster;
+            console.log('img:', img)
+                
+            let name = document.createElement("p");
+            name.innerHTML = "Name : " +  prod.Title;
+            console.log('name:', name)
+
+            let year = document.createElement("p");
+            year.innerHTML = "Year : " +  prod.Released;
+
+            let rating = document.createElement("p");
+            rating.innerHTML = "Ratings : " +  prod.imdbRating;
+        
+            div.append(img, name, year, rating);
+
+            search_container.append(div);
+        }
+    }
+
+</script>
